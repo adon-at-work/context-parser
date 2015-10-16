@@ -135,14 +135,43 @@ Authors: Nera Liu <neraliu@yahoo-inc.com>
         });
     });
 
-    describe("Comment Precedence in RAWTEXT and RCDATA", function() {
+    describe("Comment Precedence in RCDATA", function() {
         it("<% treatment", function() {
-            expect(contextParser.contextualize('<style> <% </style> %> </style>')).to.equal('<style> &lt;% </style> %> </style>');
+            expect(contextParser.contextualize('<title> <% </title> %> </title>')).to.equal('<title> &lt;% </title> %> </title>');
             expect(contextParser.contextualize('<textarea> <% </textarea> %> </textarea>')).to.equal('<textarea> &lt;% </textarea> %> </textarea>');
         });
         it("<! treatment", function() {
-            expect(contextParser.contextualize('<style> <!-- </style> --> </style>')).to.equal('<style> &lt;!-- </style> --> </style>');
+            expect(contextParser.contextualize('<title> <!-- </title> --> </title>')).to.equal('<title> &lt;!-- </title> --> </title>');
             expect(contextParser.contextualize('<textarea> <!-- </textarea> --> </textarea>')).to.equal('<textarea> &lt;!-- </textarea> --> </textarea>');
+        });
+    });
+
+    describe("Comment Precedence in RAWTEXT", function() {
+        it("<% treatment", function() {
+            expect(contextParser.contextualize('<style> <% </style> %> </style>')).to.equal('<style> <% <!--<%%>--></style> %> </style>');
+            expect(contextParser.contextualize('<iframe> <% </iframe> %> </iframe>')).to.equal('<iframe> <% <!--<%%>--></iframe> %> </iframe>');
+            expect(contextParser.contextualize('<noscript> <% </noscript> %> </noscript>')).to.equal('<noscript> <% <!--<%%>--></noscript> %> </noscript>');
+
+        });
+        it("<! treatment", function() {
+            expect(contextParser.contextualize('<style> <!-- </style> --> </style>')).to.equal('<style> <!-- <!--<%%>--></style> --> </style>');
+            expect(contextParser.contextualize('<iframe> <!-- </iframe> --> </iframe>')).to.equal('<iframe> <!-- <!--<%%>--></iframe> --> </iframe>');
+            expect(contextParser.contextualize('<noscript> <!-- </noscript> --> </noscript>')).to.equal('<noscript> <!-- <!--<%%>--></noscript> --> </noscript>');
+        });
+
+        it("non-duplicate treatment", function() {
+            var treated = '<style> <% <!--<%%>--></style> %> </style>';
+            expect(contextParser.contextualize(treated)).to.equal(treated);
+        });
+    });
+
+
+    describe("HTML5 DOCTYPE Enforcement", function() {
+       it("doctype treatment", function() {
+            expect(contextParser.contextualize('<!doctype html>')).to.equal('<!doctype html>');
+            expect(contextParser.contextualize('<!doctype html5>')).to.equal('<!--!doctype html5--><!doctype html>');
+            expect(contextParser.contextualize('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">'))
+                .to.equal('<!--!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"--><!doctype html>');
         });
     });
 
@@ -160,7 +189,8 @@ Authors: Nera Liu <neraliu@yahoo-inc.com>
 
     describe("Parse Error Correction in RAWTEXT", function() {
         it("NULL treatment", function() {
-            expect(contextParser.contextualize('<style>\x00</style>')).to.equal('<style>\uFFFD</style>');
+            // <!--<%%>--> is prefixed before the end tag due to the comment precedence problem as described above
+            expect(contextParser.contextualize('<style>\x00</style>')).to.equal('<style>\uFFFD<!--<%%>--></style>');
         });
     });
 
@@ -392,12 +422,7 @@ Authors: Nera Liu <neraliu@yahoo-inc.com>
     });
 
     describe("Parse Error Correction in MARKUP DECLARATION OPEN", function() {
-        it("doctype treatment", function() {
-            expect(contextParser.contextualize('<!doctype html>')).to.equal('<!doctype html>');
-            expect(contextParser.contextualize('<!doctype html5>')).to.equal('<!--!doctype html5--><!doctype html>');
-            expect(contextParser.contextualize('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">'))
-                .to.equal('<!--!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd"--><!doctype html>');
-        });
+ 
         it("[CDATA[ treatment", function() {
             expect(contextParser.contextualize('<math><ms><![CDATA[x<y]]></ms></math>')).to.equal('<math><ms><![CDATA[x<y]]></ms></math>');
         });
