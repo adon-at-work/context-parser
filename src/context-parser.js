@@ -710,19 +710,36 @@ function Canonicalize(state, i, endsWithEOF) {
         potentialState = this._getNextState(state, i, endsWithEOF),
         nextPotentialState = this._getNextState(potentialState, i + 1, endsWithEOF);
 
-    // console.log(i, state, potentialState, nextPotentialState, this.input.slice(i).join(''));
+    // console.log(i, state, potentialState, nextPotentialState, this.input.slice(i));
+
+    // in the following comments, [] notates the char where the parameter i is pointing at
 
     // batch replacement of NULL with \uFFFD would violate the spec
     //  - for example, NULL is untouched in CDATA section state
     if (chr === '\x00' && statesRequiringNullReplacement[state]) {
         this._inputSplice(i, 1, '\uFFFD');
     }
-    // encode < into &lt; for [<]* (* is non-alpha) in STATE_DATA, [<]% and [<]! in STATE_RCDATA and STATE_RAWTEXT
+    // encode < into &lt; for [<]* (* is non-alpha) in STATE_DATA, [<]% and [<]! in STATE_RCDATA
     else if ((potentialState === htmlState.STATE_TAG_OPEN && nextPotentialState === htmlState.STATE_DATA) ||  // [<]*, where * is non-alpha
-             ((state === htmlState.STATE_RCDATA || state === htmlState.STATE_RAWTEXT) &&                            // in STATE_RCDATA and STATE_RAWTEXT
-            chr === '<' && (nextChr === '%' || nextChr === '!'))) {   // [<]% or [<]!
+             (state === htmlState.STATE_RCDATA &&  chr === '<' && (nextChr === '%' || nextChr === '!'))) {    // [<]% or [<]! in STATE_RCDATA
         // [<]*, [<]%, [<]!
         this._inputSplice(i, 1, '&lt;');
+    }
+    // to prevent the RAWTEXT end tag from being possibly commented out in HTML4
+    // prefix RAWTEXT (e.g., <[/]style>) end tag with <!--<%%>--> 
+    else if (potentialState === htmlState.STATE_RAWTEXT_END_TAG_OPEN && 
+            nextPotentialState === htmlState.STATE_RAWTEXT_END_TAG_NAME) {
+
+        reCanonicalizeNeeded = false;
+
+        // try to match if the last few chars do not already contain the prefix, 
+        // and that next few chars are equal to the start tag name
+        if (this.input.slice(i - 6, i - 1) !== '%>-->' &&
+            this.input.slice(i + 1, i + 1 + this.tags[0].length).toLowerCase() === this.tags[0]) {
+
+            // we know this is the corresponding end tag, final output sees <[!]--<%%>--></style>
+            this._inputSplice(i, 0, '!--<%%>--><');
+        }
     }
     // enforce <!doctype html>
     // + convert bogus comment or unknown doctype to the standard html comment
