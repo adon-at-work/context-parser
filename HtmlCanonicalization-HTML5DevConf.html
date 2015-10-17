@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<!-- saved from url=(0042)http://127.0.0.1:3999/html5devconf.slide#1 -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>A Novel Solution to Automatically Resolve HTML Compatibility Issues</title>
+    <meta charset="utf-8">
+    <script src="./HtmlCanonicalization-HTML5DevConf_files/slides.js"></script>
+    <script>
+      
+      if (window["location"] && window["location"]["hostname"] == "talks.golang.org") {
+        var _gaq = _gaq || [];
+        _gaq.push(["_setAccount", "UA-11222381-6"]);
+        _gaq.push(["b._setAccount", "UA-49880327-6"]);
+        window.trackPageview = function() {
+          _gaq.push(["_trackPageview", location.pathname+location.hash]);
+          _gaq.push(["b._trackPageview", location.pathname+location.hash]);
+        };
+        window.trackPageview();
+        window.trackEvent = function(category, action, opt_label, opt_value, opt_noninteraction) {
+          _gaq.push(["_trackEvent", category, action, opt_label, opt_value, opt_noninteraction]);
+          _gaq.push(["b._trackEvent", category, action, opt_label, opt_value, opt_noninteraction]);
+        };
+      }
+    </script>
+  <meta name="viewport" content="width=1100,height=750"><meta name="apple-mobile-web-app-capable" content="yes"></head>
+
+  <body style="display: none" class="loaded">
+
+    <section class="slides layout-widescreen">
+      
+      <article class="current">
+        <h1>A Novel Solution to Automatically Resolve HTML Compatibility Issues</h1>
+        <h3>presented by Albert Yu (albertyu@yahoo-inc.com)</h3>
+        <h3>19 October 2015</h3>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    Adonis Fung and Nera Liu from Yahoo! Paranoids
+  </p>
+  
+
+  
+  <p>
+    for HTML5 Dev Conf '15
+  </p>
+  
+
+          </div>
+        
+          <div class="presenter">
+            
+          </div>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    
+  </p>
+  
+
+          </div>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    
+  </p>
+  
+
+          </div>
+        
+      </article>
+      
+  
+  
+      <article class="next">
+      
+        <h3></h3>
+        
+<div class="image">
+  <img src="./HtmlCanonicalization-HTML5DevConf_files/html5logo.jpg" height="400">
+</div>
+
+  <h2 id="TOC_1.1.">1.1. HTML 5 is freakin' awesome!!</h2>
+  
+
+      
+      </article>
+  
+  
+  
+      <article class="far-next">
+      
+        <h3>Standard Standard Standard. But in reality...</h3>
+        
+<div class="image">
+  <img src="./HtmlCanonicalization-HTML5DevConf_files/BrowserInconsistencyChart.svg" height="320">
+</div>
+
+  <ul>
+  
+    <li>Compatibility issues between HTML4 to HTML5</li>
+  
+    <li>Not everyone likes to follow the standard</li>
+  
+    <li>Some introduced their own "features" (e.g., IE Conditional Comments, etc...)</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>We all love HTML5, but not the nightmares...</h3>
+        
+  <ul>
+  
+    <li>Are your HTML work great in older browsers?</li>
+  
+    <li>Non-trivial to upgrade from HTML 4 (never like just a doctype change)</li>
+  
+  </ul>
+
+  
+  <p>
+    <b>Dream?</b>
+  </p>
+  
+
+  <ul>
+  
+    <li>Can we write HTML 5 once, deploy everywhere?</li>
+  
+    <li>(even including browsers as old as IE7)</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>The Problem</h3>
+        
+<div class="image">
+  <img src="./HtmlCanonicalization-HTML5DevConf_files/canonicalization-problem.svg" height="470">
+</div>
+
+  
+  <p>
+    The same HTML gets parsed inconsistently across different browsers!
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Compatibility Issue between HTML 4 and 5 standards</h3>
+        
+  
+  <p>
+    Example: Here, one may forget closing the comment inside the &lt;style&gt; block
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;style&gt;&lt;!-- CSS &lt;/style&gt; &lt;!-- log --&gt; &lt;script&gt;alert('firesOnlyInHTML5')&lt;/script&gt;</pre></div>
+  
+
+  <ul>
+  
+    <li>HTML5 respects the end tag "&lt;/style&gt;", and then render later HTML; versus</li>
+  
+    <li>HTML4 considers "&lt;/style&gt;" as commented out, and everything is in CSS/style tag</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Compatibility Issue Introduced by Non-standard "Features"</h3>
+        
+  
+  <p>
+    Example: <a href="https://msdn.microsoft.com/en-us/library/ms537512.aspx" target="_blank">Internet Explorer Conditional Comment</a> is supported up to IE9
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;!--[if IE]&gt; &lt;script&gt;alert('firesOnlyInIE')&lt;/script&gt; &lt;![endif]--&gt;</pre></div>
+  
+
+  <ul>
+  
+    <li>HTML5 standard considers everything as inside comment; versus</li>
+  
+    <li>IE browser (+versions) renders the enclosed thing as HTML</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Possible Causes of HTML Compatibility Issues</h3>
+        
+  <ul>
+  
+    <li>HTML4 vs. HTML5</li>
+  
+    <li>Browser quirks (features?), etc...</li>
+  
+  </ul>
+
+  
+  <p>
+    <b>plus</b> human ignorance and typos
+  </p>
+  
+
+  <ul>
+  
+    <li>Developers use the latest browser during development</li>
+  
+    <li>Latest browser renders the HTML5 way</li>
+  
+    <li>Likely unaware of the potential issues during development!</li>
+  
+  </ul>
+
+  
+  <p>
+    (note: Saucelabs and Browserstack unit tests may or may not hit the issue... 
+<br>
+
+    when developers just lack the knowledge on all potential parsing issues)
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Non-solutions (call it related work)</h3>
+        
+  
+  <p>
+    (1) How about a "PERFECTLY-compliant" HTML5 tool: lint? validator?
+  </p>
+  
+
+  <ul>
+  
+    <li>A document that's HTML5-compliant can still be interpreted differently in HTML4/older browsers</li>
+  
+    <li>Moreover, lint is meant to report errors, but not for solving them automatically</li>
+  
+  </ul>
+
+  
+  <p>
+    (2) Polyfill?
+  </p>
+  
+
+  <ul>
+  
+    <li>Apparently, use JS to emulate a new API feature for unsupported/older browsers</li>
+  
+    <li>HTML renders before JS. Hardly can a JS polyfill help with HTML corrections</li>
+  
+    <li>Our problem: an HTML can be "mis-interpreted" (perhaps no chance to run script?)</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Ignorance Comes with a Cost!</h3>
+        
+  
+  <p>
+    Usability: Different DOM trees across browsers
+  </p>
+  
+
+  <ul>
+  
+    <li>UI and visual display messed up</li>
+  
+    <li>Inconsistent business logic</li>
+  
+  </ul>
+
+  
+  <p>
+    Security: Voiding context-sensitive XSS filtering
+  </p>
+  
+
+  <ul>
+  
+    <li>Context varies across browsers</li>
+  
+    <li>Pwned via XSS if an output filter is applied in an indeterministic context</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h2>Let's try systemizing the issues and fixes</h2>
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Identifications and Verifications of Inconsistencies</h3>
+        
+  <ul>
+  
+    <li>Rounds of "head-damaging" Trials and Errors</li>
+  
+    <li>Online Literatures</li>
+  
+    <li>Browser Vendor Documentations</li>
+  
+    <li>HTML5 Specification (look up "parse errors")</li>
+  
+    <li><a href="https://yahoo.github.io/xss-filters/fuzz.html" target="_blank">HTML Fuzzing Tests</a> (similar to <a href="http://127.0.0.1:3999/shazzer.co.uk" target="_self">shazzer.co.uk</a>)</li>
+  
+  </ul>
+
+  
+  <p>
+    Hardly exclusive due to the blackbox nature of proprietary browsers
+<br>
+
+    Intelligence backed by our pen-testing team, and (double) bug bounty!
+  </p>
+  
+
+  <ul>
+  
+    <li>Let us know what to enhance, get rewards for security bugs!</li>
+  
+  </ul>
+
+<div class="image">
+  <img src="./HtmlCanonicalization-HTML5DevConf_files/manyIEs.png" height="160">
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Systemizations of Inconsistencies</h3>
+        
+  <ul>
+  
+    <li>Comment Precedence in RCDATA</li>
+  
+    <li>Comment Precedence in RAWTEXT</li>
+  
+    <li>Doctype Enforcement</li>
+  
+    <li>IE Conditional Comments</li>
+  
+    <li>Syntax/Parse Errors</li>
+  
+  </ul>
+
+  
+  <p>
+    Browser Scope
+  </p>
+  
+
+  <ul>
+  
+    <li>IE7+, Safari 5+, Chrome 30+, and Firefox 30+</li>
+  
+    <li>Covered more than 95% of desktop browser market share</li>
+  
+    <li>(why not incl. mobile? resource constraints. assumed vendors use the same parsers in desktop/mobile.)</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Solution?</h3>
+        
+  
+  <p>
+    Intuition #1: Front-End Engineering
+  </p>
+  
+
+  <ul>
+  
+    <li>Engineers likely work with the latest browsers during development and debugging</li>
+  
+    <li>End users like to use latest browsers better (unless... html5 conference? :)</li>
+  
+    <li><b>Latest</b> <b>browsers</b> <b>parse</b> <b>using</b> <b>HTML5</b>, so, let's consider it as the <i>INTENDED</i> <i>BEHAVIOR</i></li>
+  
+  </ul>
+
+  
+  <p>
+    Intuition #2: Security Engineering
+  </p>
+  
+
+  <ul>
+  
+    <li><b>HTML5</b> <b>contextual</b> <b>analysis</b> governs what context-sensitive filters to add</li>
+  
+    <li>Inconsistently interpreted HTML are subject to XSS/security consequences</li>
+  
+  </ul>
+
+  
+  <p>
+    ===========
+  </p>
+  
+
+  
+  <p>
+    So, the norm := HTML5 rules!! Let's assumed as the developers' intent...
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h2>Can we enforce the HTML5 parsing standard across all browsers?</h2>
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Before Canonicalization</h3>
+        
+<div class="image">
+  <img src="./HtmlCanonicalization-HTML5DevConf_files/canonicalization-problem.svg" height="500">
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>After Canonicalization</h3>
+        
+<div class="image">
+  <img src="./HtmlCanonicalization-HTML5DevConf_files/canonicalization-solution.svg" height="500">
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Auto HTML Canonicalization (Everyone loves automation!)</h3>
+        
+  
+  <p>
+    Design Goals
+  </p>
+  
+
+  <ul>
+  
+    <li>Auto rewrite the HTML to enforce the HTML5 parsing standard</li>
+  
+    <li>Resulted HTML to be consistently parsed across majority browsers</li>
+  
+  </ul>
+
+  
+  <p>
+    Design Considerations (upon facing an inconsistency)
+  </p>
+  
+
+  <ul>
+  
+    <li>Favor HTML5 parsing standard</li>
+  
+    <li>Security (no DOM breaking, help contextual escaping, secure-by-default config)</li>
+  
+  </ul>
+
+  
+  <p>
+    Applications
+  </p>
+  
+
+  <ul>
+  
+    <li>Applicable at/with HTML minify? clean HTML before shipping to browsers</li>
+  
+    <li>Realized in our Contextual XSS Escaping framework to ensure security </li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Inconsistencies (1/5)</h3>
+        
+  
+  <p>
+    Comment Precedence in <a href="http://www.w3.org/TR/html5/syntax.html#rcdata-state" target="_blank">RCDATA</a> (HTML5 vs. HTML4)
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;title&gt;     &lt;!-- ... &lt;/title&gt; ...       ↑ exited &lt;title&gt; as per HTML5
+&lt;textarea&gt;  &lt;!-- ... &lt;/textarea&gt; ...    ↑ exited &lt;textarea&gt; as per HTML5</pre></div>
+  
+
+  
+  <p>
+    Unlike HTML4 where the end tag does not function if it's commented
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;title&gt;     &lt;!-- ... &lt;/title&gt; ...       ↑ possibly still in &lt;title&gt; as per HTML4
+&lt;textarea&gt;  &lt;!-- ... &lt;/textarea&gt; ...    ↑ possibly still in &lt;textarea&gt; as per HTML4</pre></div>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Corrections and Underlying Decisions (1/5) </h3>
+        
+  
+  <p>
+    Enforcing HTML5 Comment Precedence in <a href="http://www.w3.org/TR/html5/syntax.html#rcdata-state" target="_blank">RCDATA</a>
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;title&gt;     &amp;lt;!-- ... &lt;/title&gt; ...       ↑ exited &lt;title&gt;    as per both HTML4 &amp; 5
+&lt;textarea&gt;  &amp;lt;!-- ... &lt;/textarea&gt; ...    ↑ exited &lt;textarea&gt; as per both HTML4 &amp; 5</pre></div>
+  
+
+  
+  <p>
+    Enforce the HTML5 parsing standard:
+  </p>
+  
+
+  <ul>
+  
+    <li>In RCDATA state, replace "&lt;!--" with "&amp;lt;!--"</li>
+  
+    <li>RCDATA understands character reference (&amp;lt; means &lt;)</li>
+  
+  </ul>
+
+  
+  <p>
+    Therefore,
+  </p>
+  
+
+  <ul>
+  
+    <li>To HTML4, it's prevented from entering comment state</li>
+  
+    <li>To HTML5, before and after are equivalent (no DOM breaking)</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Inconsistencies (2/5)</h3>
+        
+  
+  <p>
+    Comment Precedence in <a href="http://www.w3.org/TR/html5/syntax.html#rawtext-state" target="_blank">RAWTEXT</a> (HTML5 vs. HTML4)
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;style&gt;&lt;!-- ... &lt;/style&gt; ...            ↑ exited &lt;style&gt;    as per HTML5 
+&lt;noscript&gt;&lt;!-- ... &lt;/noscript&gt; ...      ↑ exited &lt;noscript&gt; as per HTML5 
+&lt;iframe&gt;&lt;!-- ... &lt;/iframe&gt; ...          ↑ exited &lt;iframe&gt;   as per HTML5</pre></div>
+  
+
+  
+  <p>
+    Similar to RCDATA, the end tag can be commented out according to HTML4
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;style&gt;     &lt;!-- ... &lt;/style&gt; ...       ↑ possibly still in &lt;style&gt; as per HTML4
+&lt;noscript&gt;  &lt;!-- ... &lt;/noscript&gt; ...    ↑ possibly still in &lt;style&gt; as per HTML4
+&lt;iframe&gt;    &lt;!-- ... &lt;/iframe&gt; ...      ↑ possibly still in &lt;style&gt; as per HTML4</pre></div>
+  
+
+  
+  <p>
+    similar but obsolete tags are omitted for discussions: &lt;noframes&gt;, &lt;noembed&gt;, &lt;xmp&gt;
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Corrections and Underlying Decisions (2/5) </h3>
+        
+  
+  <p>
+    Enforcing HTML5 Comment Precedence in <a href="http://www.w3.org/TR/html5/syntax.html#rawtext-state" target="_blank">RAWTEXT</a>:
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;style&gt;&lt;!-- ... &lt;!----&gt;&lt;/style&gt; ...            ↑ exited &lt;style&gt; as per both HTML4 &amp; 5</pre></div>
+  
+
+  <ul>
+  
+    <li>In RAWTEXT state (doesn't know charref), prefix "&lt;!----&gt;" before the end tag</li>
+  
+    <li>Close opened comment if one forgets to; doesn't hurt if properly closed too</li>
+  
+  </ul>
+
+  
+  <p>
+    Therefore,
+  </p>
+  
+
+  <ul>
+  
+    <li>To HTML4, we always closed comment, if any, to prevent enclosing &lt;/style&gt; in it</li>
+  
+    <li>To HTML5, no DOM breaking before and after too:</li>
+  
+  </ul>
+
+  
+  <p>
+    (a) All CSS rules in &lt;style&gt; tag run properly
+<br>
+
+    (b) &lt;noscript&gt; tag renders properly when script is (dis-)abled
+<br>
+
+    (c) &lt;iframe&gt; tag is able to drop everything being enclosed
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Inconsistencies (3/5)</h3>
+        
+  
+  <p>
+    Doctype (HTML5 vs. HTML4)
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;!DOCTYPE html&gt;                       HTML 5 standard</pre></div>
+  
+
+  
+  <p>
+    Unlike HTML4, which have multiple declarations
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" 
+               "http://www.w3.org/TR/html4/strict.dtd"&gt;
+&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" 
+               "http://www.w3.org/TR/html4/loose.dtd"&gt;
+&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN" 
+               "http://www.w3.org/TR/html4/frameset.dtd"&gt;</pre></div>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Corrections and Underlying Decisions (3/5) </h3>
+        
+  
+  <p>
+    Enforcing the HTML5 Doctype:
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;!--DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" 
+                 "http://www.w3.org/TR/html4/strict.dtd"--&gt;&lt;!DOCTYPE html&gt;</pre></div>
+  
+
+  <ul>
+  
+    <li>In <a href="http://www.w3.org/TR/html5/syntax.html#markup-declaration-open-state" target="_blank">markup declaration open state</a>, insert "&lt;!DOCTYPE html&gt;" in case "&lt;!DOCTYPE" is not followed by "html&gt;" using case insensitive match</li>
+  
+  </ul>
+
+  
+  <p>
+    Therefore,
+  </p>
+  
+
+  <ul>
+  
+    <li>Trivial for the sake of HTML5 conformance</li>
+  
+    <li>Let browser knows the document welcomes HTML5 parsing</li>
+  
+    <li>Performance gain for not tokenizing doctype states (attr. to 16/69 HTML5 states)</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Inconsistencies (4/5)</h3>
+        
+  
+  <p>
+    IE Conditional Comments (Non-standards)
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;!--[if IE]&gt; HtmlRenderingInIE but CommentInOthers &lt;![endif]--&gt;
+is considered as comments in HTML standard</pre></div>
+  
+
+  
+  <p>
+    The following have two bogus comments as per HTML5
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;![if lt IE 8]&gt;
+  HtmlRenderingInOthers (that dont know cond. comments) but CommentInIE
+&lt;![endif]&gt;</pre></div>
+  
+
+  
+  <p>
+    Reference: <a href="https://msdn.microsoft.com/en-us/library/ms537512.aspx" target="_blank">msdn.microsoft.com/en-us/library/ms537512.aspx</a>
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Corrections and Underlying Decisions (4/5) </h3>
+        
+  
+  <p>
+    Enforcing HTML5 Rendering:
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;!--[if IE] &gt; insideCommentForAllBrowsers &lt;![endif]--&gt;
+
+&lt;!--![if lt IE 8] --&gt; HtmlRenderingForAllBrowsers &lt;!--![endif] --&gt;</pre></div>
+  
+
+  <ul>
+  
+    <li>In <a href="http://www.w3.org/TR/html5/syntax.html#comment-state" target="_blank">comment state</a>, insert a space between "]&gt;"</li>
+  
+    <li>In <a href="http://www.w3.org/TR/html5/syntax.html#bogus-comment-state" target="_blank">bogus comment state</a>, convert to comment (i.e., &lt;!x&gt; ⇒ &lt;!--!x--&gt;) first</li>
+  
+    <li>Secure-by-default, as they can possibly originated from untrusted source</li>
+  
+  </ul>
+
+  
+  <p>
+    Therefore,
+  </p>
+  
+
+  <ul>
+  
+    <li>Again, after all, all browsers parse it consistently in the HTML5 way</li>
+  
+    <li>Configurable. Turn it off if that's what intended</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Inconsistencies (5/5)</h3>
+        
+  
+  <p>
+    Syntax/Parse Errors (Non-standards)
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;a href="hello" &lt;b&gt;              ↑ Safari 5 makes it &lt;a ...&gt;&lt;b&gt;; HTML5 won't create &lt;b&gt; tag
+&lt;a href=='&lt;body onload=alert(1)&gt;   Typos? Only IE7 and 8 fire alert(1)
+&lt;input value=`hello`&gt;              Value contains "hello" in IE, "`hello`" in HTML5
+&lt;input value="hello"class="A"&gt;     Typo?</pre></div>
+  
+
+  
+  <p>
+    Source of truth: Well-documented Parse Errors in <a href="http://www.w3.org/TR/html5/syntax.html#tokenization" target="_blank">www.w3.org/TR/html5/syntax.html#tokenization</a>
+  </p>
+  
+
+  <ul>
+  
+    <li>Too many to list out all of them, refer to <a href="https://github.com/yahoo/context-parser/blob/master/tests/unit/run-strict-context-parser.js" target="_blank">here</a> for corrections in place</li>
+  
+  </ul>
+
+  <ul>
+  
+    <li>Not necessarily all parse errors lead to inconsistent parsing. But let's clean them!!</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Corrections and Underlying Decisions (5/5) </h3>
+        
+  
+  <p>
+    Enforcing HTML5 Rendering:
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;a href="hello" b&gt;                          ↑ only &lt;a&gt; tag as per both Safari 5 and HTML5
+&lt;a href=&amp;#61;&amp;#39;&amp;lt;body onload=alert(1)&gt;   parsed it the HTML5 way also in IE 7 &amp; 8
+&lt;input value=&amp;#96;hello&amp;#96;&gt;                 consistent input.value across IE and others
+&lt;input value="hello" class="A"&gt;               typo fixed</pre></div>
+  
+
+  
+  <p>
+    Therefore,
+  </p>
+  
+
+  <ul>
+  
+    <li>Favored and observed the HTML5 parsing effect</li>
+  
+    <li>Even old browsers can parse it the HTML5 way (e.g., consistent DOM &amp; value)</li>
+  
+    <li>Typo fixes too</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h2>Demo and Applications</h2>
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Demo</h3>
+        
+  
+  <p>
+    In demo.html (copied from the slide before last),
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;a href="hello" &lt;b&gt;         
+&lt;a href=='&lt;body onload=alert(1)&gt; 
+&lt;input value=`hello`&gt;            
+&lt;input value="hello"class="A"&gt;</pre></div>
+  
+
+  
+  <p>
+    Commands
+  </p>
+  
+
+  
+  <div class="code"><pre>cat demo.html
+./context-parser/bin/canonicalizr.js demo.html</pre></div>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Security Use Case Analysis (1/3)</h3>
+        
+  
+  <p>
+    Contextual XSS Output Filtering
+  </p>
+  
+
+  <ul>
+  
+    <li>We open-sourced <a href="https://yahoo.github.io/secure-handlebars" target="_blank">secure-handlebars</a>, which can automatically defend against XSS</li>
+  
+  </ul>
+
+  
+  <p>
+    Design Principles
+  </p>
+  
+
+  <ul>
+  
+    <li>In an HTML template, output {{placeholder}}s are assumed untrusted</li>
+  
+    <li>Perform HTML5 static analysis to determine contexts of the {{placeholder}}s</li>
+  
+    <li>Automatically add context-sensitive filtering to the {{placeholder}}s</li>
+  
+  </ul>
+
+  
+  <p>
+    As a result
+  </p>
+  
+
+  <ul>
+  
+    <li>Able to treat "javascript:" in URIs, CSS strings, HTML quoted values, etc...</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Security Use Case Analysis (2/3)</h3>
+        
+  
+  <p>
+    An vulnerable example:
+  </p>
+  
+
+  
+  <div class="code"><pre>&lt;style&gt;&lt;!-- CSS &lt;/style&gt; &lt;!-- log --&gt; {{placeholder}}</pre></div>
+  
+
+  
+  <p>
+    HTML5 parses {{placeholder}} as in DATA state, so let's apply the DATA-context filter?
+  </p>
+  
+
+  
+  <p>
+    <b>Nevertheless</b>
+  </p>
+  
+
+  <ul>
+  
+    <li>Older browsers (e.g., IE7/8/9) considers {{placeholder}} as in CSS context</li>
+  
+    <li>Attacker can thus exploit it by injecting "expression(alert(1))"</li>
+  
+    <li>DATA-specific filter <b>BYPASSED</b>, XSS resulted</li>
+  
+    <li>The filter is meant to escape &lt; to prevent tag injection but NOT for CSS filtering </li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Security Use Case Analysis (3/3)</h3>
+        
+  
+  <p>
+    Secure-handlebars actually motivated this work
+  </p>
+  
+
+  <ul>
+  
+    <li>Auto HTML Canonicalization "secured" <a href="https://yahoo.github.io/secure-handlebars" target="_blank">secure-handlebars</a> :)</li>
+  
+    <li>Offline (or one-off then cached) process for filtering + canonicalization</li>
+  
+    <li>Proven useful in our security use case</li>
+  
+    <li>Yahoo! cares about online security of our users</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>The Canonicalizr</h3>
+        
+  
+  <p>
+    Usage, as simple as...
+  </p>
+  
+
+  
+  <div class="code"><pre>git clone https://github.com/adon-at-work/context-parser.git
+./context-parser/bin/canonicalizr.js test.html</pre></div>
+  
+
+  
+  <p>
+    Open-sourced:
+  </p>
+  
+<p class="link"><a href="https://github.com/adon-at-work/context-parser/blob/master/bin/canonicalizr.js" target="_blank">github.com/adon-at-work/context-parser/blob/master/bin/canonicalizr.js</a></p>
+<div class="image">
+  <img src="./HtmlCanonicalization-HTML5DevConf_files/qr.png" height="180">
+</div>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Deployability with HTML minify? (1/3)</h3>
+        
+  
+  <p>
+    Some popular HTML minify solutions
+  </p>
+  
+
+  
+  <p>
+    (1) Google <a href="https://developers.google.com/speed/pagespeed/module/" target="_blank">ModPageSpeed</a> for Apache 
+  </p>
+  
+
+  <ul>
+  
+    <li>"deployed across 100,000+ web-sites, and provided by ... DreamHost, GoDaddy, EdgeCast, and others"</li>
+  
+  </ul>
+
+  
+  <p>
+    (2) <a href="https://www.npmjs.com/package/html-minifier" target="_blank">html-minifier</a> for Node.js
+  </p>
+  
+
+  <ul>
+  
+    <li>"503,048 downloads in the last month", most npm popular?</li>
+  
+  </ul>
+
+  
+  <p>
+    (3) Will Perry <a href="http://www.willpeavy.com/minifier/" target="_blank">HTML Minifier</a>
+  </p>
+  
+
+  
+  <p>
+    (4) <a href="http://htmlcompressor.com/compressor/" target="_blank">HTML Compressor</a>
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Deployability with HTML minify? (2/3)</h3>
+        
+  
+  <p>
+    Ideally
+  </p>
+  
+
+  <ul>
+  
+    <li>Our canonicalizr can sit right after html minify (canonicalizr never add junk)</li>
+  
+    <li>But perhaps, our industry doesn't understand HTML5 well enough...</li>
+  
+  </ul>
+
+  
+  <p>
+    Evaluated particularly the HTML comment removal feature
+  </p>
+  
+
+  <ul>
+  
+    <li>Supposedly, should preserve the DOM before and after minify</li>
+  
+    <li>Consideration: HTML5 rules! as that's how the latest browsers interpret HTML</li>
+  
+    <li><b>None</b> has completely followed HTML5 for comment removal</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Deployability with HTML minify? (3/3)</h3>
+        
+  
+  <p>
+    An example (<a href="view-source:http://ec2-54-255-196-195.ap-southeast-1.compute.amazonaws.com/noscript.html?ModPagespeed=off" target="_blank">before</a>, <a href="view-source:http://ec2-54-255-196-195.ap-southeast-1.compute.amazonaws.com/noscript.html?ModPagespeedFilters=remove_comments" target="_blank">after</a>) 
+  </p>
+  
+
+  
+  <div class="code"><pre># Before HTML minification
+
+&lt;noscript&gt;&lt;!-- hello &lt;/noscript&gt; &lt;!-- log --&gt; ... &lt;script&gt;alert(1)&lt;/script&gt; 
+
+# After minified (everything is now put inside noscript, if not removed)
+
+&lt;noscript&gt; ... &lt;script&gt;alert(1)&lt;/script&gt;</pre></div>
+  
+
+  
+  <p>
+    (note: try swapping &lt;noscript&gt; with &lt;iframe&gt; or other RAWTEXT tags)
+  </p>
+  
+
+  
+  <p>
+    Insights? Support html minify as a future work?
+  </p>
+  
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Conclusions and Future Work</h3>
+        
+  
+  <p>
+    Contributions
+  </p>
+  
+
+  <ul>
+  
+    <li>Let developers focus on coding and testing in HTML5 (using latest browsers)</li>
+  
+    <li>HTML compatibility issues and errors <b>automatically</b> and gracefully resolved</li>
+  
+  </ul>
+
+  
+  <p>
+    Future Work / Collaboration Opportunities
+  </p>
+  
+
+  <ul>
+  
+    <li>Let us know if we missed anything; PRs Welcome</li>
+  
+    <li>More handy for your use (now perhaps specific for our use cases)</li>
+  
+    <li>Performance Improvement / Extend beyond UTF-8</li>
+  
+    <li>HTML Minify </li>
+  
+    <li><a href="https://gist.github.com/adon-at-work/5cd2c63e2430100706c7" target="_blank">CSS Canonicalization</a>: CSS String, Contextual removal of CSS expression(), etc</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+  
+      <article>
+      
+        <h3>Brought to you by</h3>
+        
+<div class="image">
+  <img src="./HtmlCanonicalization-HTML5DevConf_files/yahoo.svg" height="160">
+</div>
+
+  
+  <p>
+    Acknowledgment
+  </p>
+  
+
+  <ul>
+  
+    <li>Albert Yu (who pioneered the work - HTML5 Context Parser)</li>
+  
+    <li>Stuart Larsen</li>
+  
+    <li>Alaa Mubaied</li>
+  
+    <li>Aditya Mahendrakar</li>
+  
+    <li>Christopher Harrell</li>
+  
+    <li>Christopher Rohlf</li>
+  
+  </ul>
+
+      
+      </article>
+  
+  
+
+      <article>
+        <h3>Thank you</h3>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    Adonis Fung and Nera Liu from Yahoo! Paranoids
+  </p>
+  
+
+  
+  <p>
+    for HTML5 Dev Conf '15
+  </p>
+  
+
+          </div>
+        
+          <div class="presenter">
+            <p class="link"><a href="mailto:adon@yahoo-inc.com,%20neraliu@yahoo-inc.com" target="_blank">adon@yahoo-inc.com, neraliu@yahoo-inc.com</a></p><p class="link"><a href="http://127.0.0.1:3999/html5devconf.slide#ZgotmplZ" target="_blank">twitter: @adonatwork, @neraliu</a></p>
+          </div>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    
+  </p>
+  
+
+          </div>
+        
+          <div class="presenter">
+            
+  
+  <p>
+    
+  </p>
+  
+
+          </div>
+        
+      </article>
+
+    <div class="slide-area" id="prev-slide-area"></div><div class="slide-area" id="next-slide-area"></div></section>
+
+    <div id="help" style="display: none;">
+      Use the left and right arrow keys or click the left and right
+      edges of the page to navigate between slides.<br>
+      (Press 'H' or navigate to hide this message.)
+    </div>
+
+    
+    <script src="./HtmlCanonicalization-HTML5DevConf_files/play.js"></script>
+    
+
+    <script>
+      (function() {
+        
+        if (window["location"] && window["location"]["hostname"] == "talks.golang.org") {
+          var ga = document.createElement("script"); ga.type = "text/javascript"; ga.async = true;
+          ga.src = ("https:" == document.location.protocol ? "https://ssl" : "http://www") + ".google-analytics.com/ga.js";
+          var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ga, s);
+        }
+      })();
+    </script>
+  
+
+<link rel="stylesheet" type="text/css" href="./HtmlCanonicalization-HTML5DevConf_files/css"><link rel="stylesheet" type="text/css" href="./HtmlCanonicalization-HTML5DevConf_files/styles.css"></body></html>
